@@ -8,13 +8,15 @@ e - As a user, I can remove a task
 
 + 1 Create app with Ruby on Rails and creat hub on git and push it
   
-  cd ~/code/becevi
-  rails new rails-task-manager --skip-active-storage --skip-action-mailbox
-  cd rails-task-manager
-  git add .
-  git commit -m "rails new"
-  hub create
-  git push origin master
+
+    cd ~/code/becevi
+    rails new rails-task-manager --skip-active-storage --skip-action-mailbox
+    cd rails-task-manager
+    git add .
+    git commit -m "rails new"
+    hub create
+    git push origin master
+
 
 1 - Model
 Generate the Task model through the right rails generator. It should have at least the following columns:
@@ -23,39 +25,51 @@ title, as a string
 details, as a text
 completed, as a boolean (default: false)
 
-  rails generate model Task title:string details:text completed:boolean
 
-  rails db:migrate
+    rails generate model Task title:string details:text completed:boolean
+    
 
-  git status
-  git add .
-  git commit -m "Add task model" 
+    rails db:migrate
+
+
+    git status
+    git add .
+    git commit -m "Add task model" 
+
 
 1.1 Update model migration ? completed:boolean (default: false)
 
-  rails g migration AddDefaultToTasks
 
-  class AddDefaultToTasks < ActiveRecord::Migration[6.0]
-    def change
-      change_column_default :tasks, :completed, from: true, to: false
+    rails g migration AddDefaultToTasks
+
+
+    class AddDefaultToTasks < ActiveRecord::Migration[6.0]
+      def change
+        change_column_default :tasks, :completed, from: true, to: false
+      end
     end
-  end
 
-  rails db:migrate
+
+    rails db:migrate
+
 
 2 - Controller
 Generate an empty (no actions) TasksController with the right rails generator.
 
 For this exercise, do not use resources in your config/routes.rb. The goal of this exercise is to re-build the regular CRUD from scratch.
 
-  rails g controller tasks
 
-  3(a) - As a user, I can list tasks
+    rails g controller tasks
+
+
+3(a) - As a user, I can list tasks
 First, add a new route to list the tasks, following the convention from the lecture. Then, add a controller action and its view. This action should fetch all tasks, and a view should loop over these to display them, like in the screenshot below.
+
 
     Rails.application.routes.draw do
       get "tasks", to: "tasks#index"
     end
+
 
     class TasksController < ApplicationController
       def index
@@ -63,7 +77,8 @@ First, add a new route to list the tasks, following the convention from the lect
       end
     end
 
-    create file in views index.html.erb
+
+  create file in views index.html.erb
     
     
     <ul>
@@ -72,27 +87,94 @@ First, add a new route to list the tasks, following the convention from the lect
       <% end %>
     </ul>
 
-  4(b) We now have a list of tasks, and we would like to click on the task title and navigate to a new page, displaying the details of this task. Following the conventions from the lecture, add a new route, a new controller action and a new view. This action should find a specific task, thanks to its id, directly from params.
+
+3.1 To test your view, you need some tasks in the database! To create some, run a rails console in another terminal tab and then run:
+
+
+    rails c
+
+
+    Task.create title: 'Laundry', details: 'Do not mix colors!'
+    Task.create title: 'Studying', details: 'A lot of flashcards to do', completed: true
+
+
+4(b) We now have a list of tasks, and we would like to click on the task title and navigate to a new page, displaying the details of this task. Following the conventions from the lecture, add a new route, a new controller action and a new view. This action should find a specific task, thanks to its id, directly from params.
 
 Update the index.html.erb view with the link_to helper to build the links.
 
-  Rails.application.routes.draw do
-    get "tasks/:id", to: "tasks#show", as: :task
-  end
 
-  class TasksController < ApplicationController
-    def show
-      @task = Task.find(params[:id])
+    Rails.application.routes.draw do
+      get "tasks/:id", to: "tasks#show", as: :task
     end
-  end
+
+
+    class TasksController < ApplicationController
+      def show
+        @task = Task.find(params[:id])
+      end
+    end
+
 
   create new show.html.erb file
 
-  <h2><%= @task.title %></h2>
-  <p><%= @task.details %></p>
-  <p><%= @task.completed %></p>
+
+    <h2><%= @task.title %></h2>
+    <p><%= @task.details %></p>
+    <p><%= @task.completed %></p>
+
+
+    <h1>Here are the tasks:</h1>
+    <ul>
+      <% @tasks.each do |task| %>
+        <li><%= link_to task.title, task_path(task) %></li>
+      <% end %>
+    </ul>
 
 
 5(c) - As a user, I can add a new task
 Following the lecture conventions, add two routes to handle the creation of a task. One route is there to display the Task form, and another one is there to handle the POST request generated when submitting this form. 
 Try to use directly the form_for helper in your view.
+
+    Rails.application.routes.draw do
+      get "tasks/new", to: "tasks#new" # The `new` route needs to be *before* `show` route.
+    end
+
+
+    def new
+      @task = Task.new # needed to instantiate the form_for
+    end
+
+
+    <%= form_for(@task) do |f| %>
+      <%= f.label :title %>
+      <%= f.text_field :title %>
+      <%= f.label :details %>
+      <%= f.text_field :details %>
+      <%= f.label :completed %>
+      <%= f.text_field :completed %>
+      <%= f.submit %>
+    <% end %>
+
+
+    Rails.application.routes.draw do
+      post "tasks", to: "tasks#create"
+    end
+
+
+    def create
+      @restaurant = Restaurant.new(restaurant_params)
+      @restaurant.save
+
+      # no need for app/views/restaurants/create.html.erb
+      redirect_to restaurant_path(@restaurant)
+    end
+
+    private
+
+    def restaurant_params
+      params.require(:restaurant).permit(:name, :address, :rating)
+    end
+
+6 - As a user, I can edit a task
+We want to be able to edit a task, changing its title, its details and especially marking it as completed. Following the lecture conventions, add the two routes you need for that feature. 
+Implement the controller actions, and the views.
